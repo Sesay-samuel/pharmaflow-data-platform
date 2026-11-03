@@ -48,3 +48,49 @@ wholesale pharmacy operations.
 
 All project data is synthetic and is used for demonstration.
 No real patient or pharmacy customer data is included.
+
+
+## Day 2 — Apache Airflow and Medallion Architecture
+
+The platform implements a three-layer data architecture:
+
+- Bronze: original CSV source snapshots
+- Silver: cleaned and validated Parquet datasets
+- Gold: aggregated analytics-ready Parquet datasets
+
+### Airflow Orchestration
+
+The `pharmaflow_medallion_pipeline` DAG performs:
+
+1. Generate synthetic pharmacy data
+2. Ingest Bronze records
+3. Transform and validate Silver records
+4. Load Silver records into PostgreSQL
+5. Generate Gold analytics
+6. Execute data quality and reconciliation checks
+
+### Run Airflow Locally
+
+```powershell
+docker compose up -d
+docker compose -f compose.airflow.yaml build
+docker compose -f compose.airflow.yaml up -d
+```
+
+Open http://localhost:8081 and trigger the
+`pharmaflow_medallion_pipeline` DAG.
+
+### Run Tests
+
+```powershell
+python -m pytest -v
+```
+
+### Architecture Notes
+
+This is a local development environment using synthetic data.
+Airflow uses standalone mode, and the pipeline currently performs
+full-refresh loads.
+
+Future enhancements will include incremental processing,
+AWS S3 storage, cloud warehousing, CI/CD and monitoring.

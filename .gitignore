@@ -5,3 +5,23 @@ __pycache__/
 *.pyc
 data/raw/
 data/processed/
+# Generated Medallion data
+data/bronze/
+data/silver/
+data/gold/
+
+# Airflow local files
+logs/
+airflow/*.db
+airflow/*.db-*
+airflow/*password*
+airflow/airflow.cfg
+
+# Python
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# Local secrets
+.env
+.venv/

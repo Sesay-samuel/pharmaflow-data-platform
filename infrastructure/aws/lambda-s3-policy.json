@@ -1,0 +1,21 @@
+{
+    "Version":  "2012-10-17",
+    "Statement":  [
+                      {
+                          "Effect":  "Allow",
+                          "Sid":  "ReadBronzeObjects",
+                          "Resource":  "arn:aws:s3:::pharmaflow-data-673502297238-eu-west-2/bronze/*",
+                          "Action":  [
+                                         "s3:GetObject"
+                                     ]
+                      },
+                      {
+                          "Effect":  "Allow",
+                          "Sid":  "WriteAuditReceipts",
+                          "Resource":  "arn:aws:s3:::pharmaflow-data-673502297238-eu-west-2/audit/*",
+                          "Action":  [
+                                         "s3:PutObject"
+                                     ]
+                      }
+                  ]
+}

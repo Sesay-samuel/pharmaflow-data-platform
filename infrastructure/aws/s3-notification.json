@@ -1,0 +1,25 @@
+{
+    "LambdaFunctionConfigurations":  [
+                                         {
+                                             "LambdaFunctionArn":  "arn:aws:lambda:eu-west-2:673502297238:function:pharmaflow-s3-ingestion",
+                                             "Events":  [
+                                                            "s3:ObjectCreated:*"
+                                                        ],
+                                             "Filter":  {
+                                                            "Key":  {
+                                                                        "FilterRules":  [
+                                                                                            {
+                                                                                                "Value":  "bronze/",
+                                                                                                "Name":  "prefix"
+                                                                                            },
+                                                                                            {
+                                                                                                "Value":  ".csv",
+                                                                                                "Name":  "suffix"
+                                                                                            }
+                                                                                        ]
+                                                                    }
+                                                        },
+                                             "Id":  "PharmaFlowBronzeUpload"
+                                         }
+                                     ]
+}

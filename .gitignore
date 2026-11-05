@@ -25,3 +25,25 @@ __pycache__/
 # Local secrets
 .env
 .venv/
+
+# AWS deployment packages
+*.zip
+
+# Local AWS credentials
+.aws/
+aws_credentials
+aws_config
+
+# Generated cloud data
+data/bronze/
+data/silver/
+data/gold/
+
+# Environment files
+.env
+.venv/
+
+# Python cache
+__pycache__/
+.pytest_cache/
+*.pyc

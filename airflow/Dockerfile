@@ -10,4 +10,5 @@ RUN pip install --no-cache-dir \
     "SQLAlchemy>=2.0,<3" \
     "psycopg[binary]>=3.2,<4" \
     "python-dotenv>=1.0,<2" \
-    "pyarrow>=17,<24"
+    "pyarrow>=17,<24"\
+    "boto3>=1.35,<2"

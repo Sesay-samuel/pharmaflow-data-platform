@@ -39,7 +39,7 @@ def create_bronze():
         if not source.exists():
             raise FileNotFoundError(source)
 
-        shutil.copy2(source, target)
+        shutil.copyfile(source, target)
         print(f"BRONZE: copied {table}")
 
     print("Bronze layer completed")

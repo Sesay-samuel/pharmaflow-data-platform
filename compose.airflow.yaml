@@ -16,6 +16,7 @@ services:
       - "127.0.0.1:8081:8080"
 
     environment:
+      # Apache Airflow
       AIRFLOW_HOME: /opt/airflow
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
       AIRFLOW__CORE__DAGS_FOLDER: /opt/project/dags
@@ -23,14 +24,33 @@ services:
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
       AIRFLOW__API__BASE_URL: http://localhost:8080
 
+      # PharmaFlow PostgreSQL
       DATABASE_URL: postgresql+psycopg://pharmacy_user:pharmacy_dev_password@host.docker.internal:5433/pharmacy_db
 
+      # Python
       PYTHONPATH: /opt/project
       PYTHONUNBUFFERED: "1"
 
+      # AWS S3
+      PHARMAFLOW_S3_BUCKET: ${PHARMAFLOW_S3_BUCKET:-}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-eu-west-2}
+      AWS_REGION: ${AWS_DEFAULT_REGION:-eu-west-2}
+
+      # AWS IAM Identity Center authentication
+      AWS_PROFILE: pharmaflow-dev
+      AWS_CONFIG_FILE: /home/airflow/.aws/config
+      AWS_SHARED_CREDENTIALS_FILE: /home/airflow/.aws/credentials
+      AWS_EC2_METADATA_DISABLED: "true"
+
     volumes:
+      # PharmaFlow project
       - ./:/opt/project
+
+      # Persistent Airflow metadata
       - airflow_data:/opt/airflow
+
+      # Windows AWS configuration and SSO cache
+      - ${USERPROFILE}/.aws:/home/airflow/.aws:ro
 
     working_dir: /opt/project
 

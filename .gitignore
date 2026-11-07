@@ -47,3 +47,24 @@ data/gold/
 __pycache__/
 .pytest_cache/
 *.pyc
+# Terraform local state and generated files
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.*
+**/crash.log
+**/crash.*.log
+**/*.tfplan
+**/terraform.tfvars
+**/*.auto.tfvars
+**/*.tfvars.json
+# AWS credentials
+.aws/
+aws_credentials
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/

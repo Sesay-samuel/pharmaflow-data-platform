@@ -1,0 +1,17 @@
+
+.git
+.github
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+.env
+.env.*
+!.env.example
+.aws
+data
+logs
+airflow_data
+*.db
+*.sqlite
+*.sqlite3

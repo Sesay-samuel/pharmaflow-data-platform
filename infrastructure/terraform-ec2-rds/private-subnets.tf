@@ -1,7 +1,7 @@
 
 # Private RDS subnet in eu-west-2a
 resource "aws_subnet" "rds_private_a" {
-  vpc_id                  = data.aws_vpc.pharmaflow.id
+  vpc_id                  = var.vpc_id
   cidr_block              = "172.31.64.0/24"
   availability_zone       = "eu-west-2a"
   map_public_ip_on_launch = false
@@ -13,7 +13,7 @@ resource "aws_subnet" "rds_private_a" {
 
 # Private RDS subnet in eu-west-2b
 resource "aws_subnet" "rds_private_b" {
-  vpc_id                  = data.aws_vpc.pharmaflow.id
+  vpc_id                  = var.vpc_id
   cidr_block              = "172.31.65.0/24"
   availability_zone       = "eu-west-2b"
   map_public_ip_on_launch = false
@@ -25,7 +25,7 @@ resource "aws_subnet" "rds_private_b" {
 
 # Private route table without internet access
 resource "aws_route_table" "rds_private" {
-  vpc_id = data.aws_vpc.pharmaflow.id
+  vpc_id = var.vpc_id
 
   tags = {
     Name = "pharmaflow-rds-private-rt"
@@ -41,3 +41,4 @@ resource "aws_route_table_association" "rds_private_b" {
   subnet_id      = aws_subnet.rds_private_b.id
   route_table_id = aws_route_table.rds_private.id
 }
+

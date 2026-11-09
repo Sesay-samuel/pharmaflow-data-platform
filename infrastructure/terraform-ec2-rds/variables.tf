@@ -46,3 +46,10 @@ variable "db_allocated_storage" {
   type        = number
   default     = 20
 }
+
+
+variable "ec2_subnet_id" {
+  description = "Existing public subnet for PharmaFlow EC2"
+  type        = string
+  default     = "subnet-07ae53342133437ac"
+}

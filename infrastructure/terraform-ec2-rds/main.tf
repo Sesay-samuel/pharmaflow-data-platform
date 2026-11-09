@@ -77,8 +77,11 @@ resource "aws_vpc_security_group_ingress_rule" "rds_postgres" {
 
 # RDS subnet group
 resource "aws_db_subnet_group" "pharmaflow" {
-  name       = "pharmaflow-db-subnet-group"
-  subnet_ids = data.aws_subnets.pharmaflow.ids
+  name = "pharmaflow-db-subnet-group"
+  subnet_ids = [
+    aws_subnet.rds_private_a.id,
+    aws_subnet.rds_private_b.id
+  ]
 
   tags = {
     Name = "pharmaflow-db-subnet-group"

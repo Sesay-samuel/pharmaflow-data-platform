@@ -52,7 +52,7 @@ resource "aws_iam_instance_profile" "ec2" {
 resource "aws_instance" "pharmaflow" {
   ami                    = data.aws_ami.amazon_linux.id
   instance_type          = var.ec2_instance_type
-  subnet_id              = data.aws_subnets.pharmaflow.ids[0]
+  subnet_id              = var.ec2_subnet_id
   vpc_security_group_ids = [aws_security_group.ec2.id]
   iam_instance_profile   = aws_iam_instance_profile.ec2.name
 
@@ -67,7 +67,7 @@ resource "aws_instance" "pharmaflow" {
 
 
   root_block_device {
-    volume_size = 8
+    volume_size = 16
     volume_type = "gp3"
     encrypted   = true
   }

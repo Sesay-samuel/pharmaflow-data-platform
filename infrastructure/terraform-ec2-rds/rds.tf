@@ -4,6 +4,7 @@ resource "aws_db_instance" "pharmaflow" {
   identifier = "pharmaflow-postgres-dev"
 
   engine         = "postgres"
+  engine_version = "16.14"
   instance_class = var.db_instance_class
 
   allocated_storage = var.db_allocated_storage

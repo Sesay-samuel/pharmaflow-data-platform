@@ -32,6 +32,20 @@ resource "aws_vpc_security_group_egress_rule" "ec2_https" {
   cidr_ipv4         = "0.0.0.0/0"
 }
 
+# Allow outbound HTTP for Amazon Linux package repositories
+resource "aws_vpc_security_group_egress_rule" "ec2_http" {
+  security_group_id = aws_security_group.ec2.id
+
+  ip_protocol = "tcp"
+  from_port   = 80
+  to_port     = 80
+
+  cidr_ipv4 = "0.0.0.0/0"
+
+  description = "HTTP access for package installation"
+}
+
+
 # EC2 to RDS PostgreSQL
 resource "aws_vpc_security_group_egress_rule" "ec2_postgres" {
   security_group_id            = aws_security_group.ec2.id

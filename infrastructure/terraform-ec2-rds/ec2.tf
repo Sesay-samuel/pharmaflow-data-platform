@@ -58,9 +58,13 @@ resource "aws_instance" "pharmaflow" {
 
   associate_public_ip_address = true
 
+
   metadata_options {
-    http_tokens = "required"
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
   }
+
 
   root_block_device {
     volume_size = 8

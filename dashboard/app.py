@@ -5,7 +5,7 @@ import os
 import boto3
 import pandas as pd
 import streamlit as st
-from botocore.exceptions import BotoCoreError, ClientError, ProfileNotFound
+from botocore.exceptions import BotoCoreError, ClientError, ProfileNotFound, NoCredentialsError
 
 
 st.set_page_config(
@@ -18,8 +18,12 @@ BUCKET = os.getenv(
     "PHARMAFLOW_S3_BUCKET",
     "pharmaflow-data-673502297238-eu-west-2",
 )
+
 REGION = os.getenv("AWS_DEFAULT_REGION", "eu-west-2")
-PROFILE = os.getenv("AWS_PROFILE", "pharmaflow-dev")
+
+# Local: use AWS_PROFILE=pharmaflow-dev
+# EC2: leave AWS_PROFILE unset to use the attached IAM role.
+PROFILE = os.getenv("AWS_PROFILE")
 
 DATASETS = {
     "Branches": "gold/branch_revenue.parquet",
@@ -31,9 +35,10 @@ DATASETS = {
 @st.cache_data(ttl=300, show_spinner="Loading Gold data from S3...")
 def load_gold_data(bucket, region, profile):
     session = boto3.Session(
-        profile_name=profile,
         region_name=region,
+        **({"profile_name": profile} if profile else {}),
     )
+
     client = session.client("s3")
 
     results = {}
@@ -43,6 +48,7 @@ def load_gold_data(bucket, region, profile):
             Bucket=bucket,
             Key=key,
         )
+
         content = response["Body"].read()
         results[name] = pd.read_parquet(io.BytesIO(content))
 
@@ -86,15 +92,19 @@ def render_analysis(title, df, metric_keywords, dimension_keywords):
 
     default_metric = preferred_column(measures, metric_keywords)
 
-    # Exclude numeric identifiers from the preferred measures.
+    # Exclude numeric identifiers from preferred measures.
     business_measures = [
-        col for col in measures
+        col
+        for col in measures
         if not col.lower().endswith("_id")
     ]
 
     if business_measures:
         measures = business_measures
-        default_metric = preferred_column(measures, metric_keywords)
+        default_metric = preferred_column(
+            measures,
+            metric_keywords,
+        )
 
     left, right = st.columns(2)
 
@@ -112,6 +122,7 @@ def render_analysis(title, df, metric_keywords, dimension_keywords):
                 dimensions,
                 dimension_keywords,
             )
+
             dimension = st.selectbox(
                 "Group by",
                 dimensions,
@@ -131,13 +142,17 @@ def render_analysis(title, df, metric_keywords, dimension_keywords):
 
         st.bar_chart(chart_data, horizontal=True)
     else:
-        st.metric("Total", f"{df[metric].sum():,.2f}")
+        st.metric(
+            "Total",
+            f"{df[metric].sum():,.2f}",
+        )
 
     with st.expander("View source data"):
         st.dataframe(df, use_container_width=True)
 
 
 st.title("💊 PharmaFlow Analytics Dashboard")
+
 st.caption(
     "Pharmacy Retail & Wholesale | "
     "Apache Airflow • AWS S3 • Bronze/Silver/Gold"
@@ -145,25 +160,48 @@ st.caption(
 
 with st.sidebar:
     st.header("Data Source")
+
     st.write("AWS Region:", REGION)
     st.write("S3 Bucket:", BUCKET)
-    st.write("AWS Profile:", PROFILE)
+
+    if PROFILE:
+        st.write("Authentication:", f"AWS Profile ({PROFILE})")
+    else:
+        st.write("Authentication:", "AWS Default Credential Chain")
 
     if st.button("Refresh data"):
         load_gold_data.clear()
         st.rerun()
 
-try:
-    datasets = load_gold_data(BUCKET, REGION, PROFILE)
 
-except (BotoCoreError, ClientError, ProfileNotFound, OSError, ValueError) as error:
+try:
+    datasets = load_gold_data(
+        BUCKET,
+        REGION,
+        PROFILE,
+    )
+
+except (
+    BotoCoreError,
+    ClientError,
+    ProfileNotFound,
+    NoCredentialsError,
+    OSError,
+    ValueError,
+    ImportError,
+) as error:
     st.error("Unable to load Gold-layer datasets from AWS S3.")
     st.code(str(error))
+
     st.info(
-        "Check your AWS SSO login, S3 permissions, "
-        "bucket name, and Gold dataset paths."
+        "Check AWS credentials or the EC2 IAM role, "
+        "S3 permissions, bucket name, and Gold dataset paths. "
+        "For local AWS SSO authentication, run "
+        "'aws sso login --profile pharmaflow-dev'."
     )
+
     st.stop()
+
 
 branches = datasets["Branches"]
 medicines = datasets["Medicines"]
@@ -172,18 +210,31 @@ suppliers = datasets["Suppliers"]
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.metric("Pharmacy Branches", f"{len(branches):,}")
+    st.metric(
+        "Pharmacy Branches",
+        f"{len(branches):,}",
+    )
 
 with col2:
-    st.metric("Medicine Categories / Products", f"{len(medicines):,}")
+    st.metric(
+        "Medicine Categories / Products",
+        f"{len(medicines):,}",
+    )
 
 with col3:
-    st.metric("Suppliers", f"{len(suppliers):,}")
+    st.metric(
+        "Suppliers",
+        f"{len(suppliers):,}",
+    )
 
 st.divider()
 
 tab1, tab2, tab3 = st.tabs(
-    ["Branch Revenue", "Medicine Revenue", "Supplier Spending"]
+    [
+        "Branch Revenue",
+        "Medicine Revenue",
+        "Supplier Spending",
+    ]
 )
 
 with tab1:

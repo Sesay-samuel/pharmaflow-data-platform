@@ -1,12 +1,22 @@
 
 import io
 import os
+from pathlib import Path
 
 import boto3
 import pandas as pd
 import streamlit as st
-from botocore.exceptions import BotoCoreError, ClientError, ProfileNotFound, NoCredentialsError
+from botocore.exceptions import (
+    BotoCoreError,
+    ClientError,
+    NoCredentialsError,
+    ProfileNotFound,
+)
 
+
+# ============================================================
+# 1. Streamlit page configuration
+# ============================================================
 
 st.set_page_config(
     page_title="PharmaFlow Analytics",
@@ -14,15 +24,38 @@ st.set_page_config(
     layout="wide",
 )
 
+
+# ============================================================
+# 2. Data source configuration
+# ============================================================
+
+# Supported modes:
+# local - Load Gold-layer Parquet files from the repository
+# s3    - Load Gold-layer Parquet files from AWS S3
+#
+# Default to local mode for public portfolio deployment.
+# Existing AWS deployments can set PHARMAFLOW_DATA_SOURCE=s3.
+
+DATA_SOURCE = os.getenv(
+    "PHARMAFLOW_DATA_SOURCE",
+    "local",
+).strip().lower()
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+LOCAL_GOLD_DIR = PROJECT_ROOT / "data" / "gold"
+
 BUCKET = os.getenv(
     "PHARMAFLOW_S3_BUCKET",
     "pharmaflow-data-673502297238-eu-west-2",
 )
 
-REGION = os.getenv("AWS_DEFAULT_REGION", "eu-west-2")
+REGION = os.getenv(
+    "AWS_DEFAULT_REGION",
+    "eu-west-2",
+)
 
-# Local: use AWS_PROFILE=pharmaflow-dev
-# EC2: leave AWS_PROFILE unset to use the attached IAM role.
+# Local AWS access: AWS_PROFILE=pharmaflow-dev
+# EC2 IAM role: leave AWS_PROFILE unset.
 PROFILE = os.getenv("AWS_PROFILE")
 
 DATASETS = {
@@ -32,7 +65,14 @@ DATASETS = {
 }
 
 
-@st.cache_data(ttl=300, show_spinner="Loading Gold data from S3...")
+# ============================================================
+# 3. AWS S3 Gold-layer data loader
+# ============================================================
+
+@st.cache_data(
+    ttl=300,
+    show_spinner="Loading Gold-layer data from AWS S3...",
+)
 def load_gold_data(bucket, region, profile):
     session = boto3.Session(
         region_name=region,
@@ -40,7 +80,6 @@ def load_gold_data(bucket, region, profile):
     )
 
     client = session.client("s3")
-
     results = {}
 
     for name, key in DATASETS.items():
@@ -50,20 +89,54 @@ def load_gold_data(bucket, region, profile):
         )
 
         content = response["Body"].read()
-        results[name] = pd.read_parquet(io.BytesIO(content))
+
+        results[name] = pd.read_parquet(
+            io.BytesIO(content)
+        )
 
     return results
 
 
+# ============================================================
+# 4. Local Gold-layer data loader
+# ============================================================
+
+@st.cache_data(
+    show_spinner="Loading local Gold-layer datasets...",
+)
+def load_local_gold_data():
+    results = {}
+
+    for name, key in DATASETS.items():
+        file_path = PROJECT_ROOT / "data" / key
+
+        if not file_path.is_file():
+            raise FileNotFoundError(
+                f"Missing Gold-layer dataset: {file_path}"
+            )
+
+        results[name] = pd.read_parquet(file_path)
+
+    return results
+
+
+# ============================================================
+# 5. Data analysis helper functions
+# ============================================================
+
 def numeric_columns(df):
-    return df.select_dtypes(include="number").columns.tolist()
+    return df.select_dtypes(
+        include="number"
+    ).columns.tolist()
 
 
 def dimension_columns(df):
     return [
         column
         for column in df.columns
-        if not pd.api.types.is_numeric_dtype(df[column])
+        if not pd.api.types.is_numeric_dtype(
+            df[column]
+        )
     ]
 
 
@@ -76,35 +149,46 @@ def preferred_column(columns, keywords):
     return columns[0] if columns else None
 
 
-def render_analysis(title, df, metric_keywords, dimension_keywords):
-    st.subheader(title)
+# ============================================================
+# 6. Reusable analytics component
+# ============================================================
 
-    measures = numeric_columns(df)
-    dimensions = dimension_columns(df)
+def render_analysis(
+    title,
+    df,
+    metric_keywords,
+    dimension_keywords,
+):
+    st.subheader(title)
 
     if df.empty:
         st.info("No records are available.")
         return
 
+    measures = numeric_columns(df)
+    dimensions = dimension_columns(df)
+
     if not measures:
-        st.dataframe(df, use_container_width=True)
+        st.dataframe(
+            df,
+            width="stretch",
+        )
         return
 
-    default_metric = preferred_column(measures, metric_keywords)
-
-    # Exclude numeric identifiers from preferred measures.
+    # Exclude numeric identifier columns where possible.
     business_measures = [
-        col
-        for col in measures
-        if not col.lower().endswith("_id")
+        column
+        for column in measures
+        if not column.lower().endswith("_id")
     ]
 
     if business_measures:
         measures = business_measures
-        default_metric = preferred_column(
-            measures,
-            metric_keywords,
-        )
+
+    default_metric = preferred_column(
+        measures,
+        metric_keywords,
+    )
 
     left, right = st.columns(2)
 
@@ -126,7 +210,9 @@ def render_analysis(title, df, metric_keywords, dimension_keywords):
             dimension = st.selectbox(
                 "Group by",
                 dimensions,
-                index=dimensions.index(default_dimension),
+                index=dimensions.index(
+                    default_dimension
+                ),
                 key=f"{title}_dimension",
             )
         else:
@@ -134,13 +220,19 @@ def render_analysis(title, df, metric_keywords, dimension_keywords):
 
     if dimension:
         chart_data = (
-            df.groupby(dimension, dropna=False)[metric]
+            df.groupby(
+                dimension,
+                dropna=False,
+            )[metric]
             .sum()
             .sort_values(ascending=False)
             .head(15)
         )
 
-        st.bar_chart(chart_data, horizontal=True)
+        st.bar_chart(
+            chart_data,
+            horizontal=True,
+        )
     else:
         st.metric(
             "Total",
@@ -148,8 +240,15 @@ def render_analysis(title, df, metric_keywords, dimension_keywords):
         )
 
     with st.expander("View source data"):
-        st.dataframe(df, use_container_width=True)
+        st.dataframe(
+            df,
+            width="stretch",
+        )
 
+
+# ============================================================
+# 7. Dashboard header
+# ============================================================
 
 st.title("💊 PharmaFlow Analytics Dashboard")
 
@@ -158,54 +257,137 @@ st.caption(
     "Apache Airflow • AWS S3 • Bronze/Silver/Gold"
 )
 
+st.caption(
+    "Interactive analytics powered by synthetic "
+    "pharmacy retail and wholesale datasets."
+)
+
+
+# ============================================================
+# 8. Sidebar
+# ============================================================
+
 with st.sidebar:
     st.header("Data Source")
 
-    st.write("AWS Region:", REGION)
-    st.write("S3 Bucket:", BUCKET)
+    if DATA_SOURCE == "local":
+        st.success("Local Gold-layer data")
 
-    if PROFILE:
-        st.write("Authentication:", f"AWS Profile ({PROFILE})")
+        st.write(
+            "Storage:",
+            "Parquet files",
+        )
+
+        st.write(
+            "Mode:",
+            "Public portfolio demonstration",
+        )
+
+    elif DATA_SOURCE == "s3":
+        st.info("AWS S3 Gold-layer data")
+
+        st.write(
+            "AWS Region:",
+            REGION,
+        )
+
+        st.write(
+            "S3 Bucket:",
+            BUCKET,
+        )
+
+        if PROFILE:
+            st.write(
+                "Authentication:",
+                f"AWS Profile ({PROFILE})",
+            )
+        else:
+            st.write(
+                "Authentication:",
+                "AWS Default Credential Chain",
+            )
+
     else:
-        st.write("Authentication:", "AWS Default Credential Chain")
+        st.error("Unsupported data source.")
 
-    if st.button("Refresh data"):
+    if st.button(
+        "Refresh data",
+        width="stretch",
+    ):
         load_gold_data.clear()
+        load_local_gold_data.clear()
         st.rerun()
 
+    st.divider()
+
+    st.caption(
+        "PharmaFlow Data Engineering Platform"
+    )
+
+
+# ============================================================
+# 9. Load selected data source
+# ============================================================
 
 try:
-    datasets = load_gold_data(
-        BUCKET,
-        REGION,
-        PROFILE,
-    )
+    if DATA_SOURCE == "local":
+        datasets = load_local_gold_data()
+
+    elif DATA_SOURCE == "s3":
+        datasets = load_gold_data(
+            BUCKET,
+            REGION,
+            PROFILE,
+        )
+
+    else:
+        raise ValueError(
+            "PHARMAFLOW_DATA_SOURCE must be "
+            "'local' or 's3'."
+        )
 
 except (
     BotoCoreError,
     ClientError,
     ProfileNotFound,
     NoCredentialsError,
+    FileNotFoundError,
     OSError,
     ValueError,
     ImportError,
 ) as error:
-    st.error("Unable to load Gold-layer datasets from AWS S3.")
-    st.code(str(error))
-
-    st.info(
-        "Check AWS credentials or the EC2 IAM role, "
-        "S3 permissions, bucket name, and Gold dataset paths. "
-        "For local AWS SSO authentication, run "
-        "'aws sso login --profile pharmaflow-dev'."
+    st.error(
+        "Unable to load PharmaFlow Gold-layer datasets."
     )
+
+    # Keep internal file paths and AWS error details
+    # out of the publicly hosted dashboard.
+    if os.getenv(
+        "PHARMAFLOW_DEBUG",
+        "false",
+    ).lower() == "true":
+        st.code(str(error))
+    else:
+        st.info(
+            "The analytics datasets are currently "
+            "unavailable. Please try again later."
+        )
 
     st.stop()
 
 
+# ============================================================
+# 10. Extract loaded datasets
+# ============================================================
+
 branches = datasets["Branches"]
 medicines = datasets["Medicines"]
 suppliers = datasets["Suppliers"]
+
+
+# ============================================================
+# 11. Dashboard summary metrics
+# ============================================================
 
 col1, col2, col3 = st.columns(3)
 
@@ -226,6 +408,11 @@ with col3:
         "Suppliers",
         f"{len(suppliers):,}",
     )
+
+
+# ============================================================
+# 12. Analytics dashboard tabs
+# ============================================================
 
 st.divider()
 
@@ -260,6 +447,11 @@ with tab3:
         ["spend", "cost", "total"],
         ["supplier_name", "supplier"],
     )
+
+
+# ============================================================
+# 13. Footer
+# ============================================================
 
 st.divider()
 

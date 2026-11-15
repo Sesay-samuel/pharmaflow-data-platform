@@ -1,25 +1,73 @@
+
 # PharmaFlow Data Engineering Platform
 
 **End-to-End Data Engineering | Python | PostgreSQL | Apache Airflow | AWS | Docker | Terraform | CI/CD**
 
-PharmaFlow is a portfolio data engineering platform that simulates pharmacy retail and wholesale operations. It demonstrates data ingestion, transformation, validation, orchestration, cloud storage, analytics, monitoring and infrastructure automation.
+PharmaFlow is an end-to-end data engineering portfolio project that simulates pharmacy retail and wholesale operations.
 
-The project uses synthetic data and follows a Bronze, Silver and Gold medallion architecture.
+It demonstrates how operational data can be generated, ingested, validated, transformed, orchestrated, stored, and queried using modern data engineering technologies.
 
-## Key Features
+The platform uses synthetic datasets and follows a **Bronze, Silver, and Gold medallion architecture**.
 
-- Synthetic pharmacy data generation
-- Python ETL pipelines with pandas and SQLAlchemy
-- PostgreSQL relational data storage
-- Apache Airflow pipeline orchestration
-- Bronze, Silver and Gold data processing
-- Data-quality checks and automated testing
-- AWS S3 data lake storage
-- AWS Lambda ingestion and reporting components
-- Streamlit analytics dashboard
-- Docker containerization
-- GitHub Actions CI workflow
-- Terraform-managed CloudWatch alarms and SNS monitoring
+## Project Highlights
+
+- Built Python ETL pipelines using pandas and SQLAlchemy.
+- Processed 10,000 retail sales and 3,000 wholesale orders.
+- Implemented automated data validation and transformation.
+- Orchestrated data workflows using Apache Airflow.
+- Integrated PostgreSQL and Amazon S3 storage.
+- Created three curated Gold-layer analytics datasets.
+- Registered Parquet datasets in AWS Glue Data Catalog.
+- Successfully queried all three datasets using Amazon Athena.
+- Provisioned cloud infrastructure using Terraform.
+- Implemented automated tests and GitHub Actions CI.
+- Developed a Streamlit analytics dashboard.
+- Implemented AWS monitoring and cost-awareness controls.
+
+## Architecture
+
+```text
+       Synthetic Pharmacy Data
+                  |
+                  v
+         Python ETL Pipeline
+                  |
+                  v
+       Data Quality Validation
+                  |
+                  v
+         Bronze / Silver / Gold
+                  |
+          +-------+-------+
+          |               |
+          v               v
+      PostgreSQL       Amazon S3
+                          |
+                          v
+                 Gold Parquet Data
+                          |
+                          v
+                 AWS Glue Catalog
+                          |
+                          v
+                    Athena SQL
+                          |
+                          v
+                  Analytics Results
+
+Supporting components:
+- Apache Airflow: Workflow orchestration
+- AWS Lambda / API Gateway: Cloud integration
+- Terraform: Infrastructure as code
+- Docker: Containerization
+- GitHub Actions: CI automation
+- CloudWatch / SNS: Monitoring
+- Streamlit: Interactive dashboard
+```
+
+This diagram provides a conceptual overview of the platform rather than claiming that every component runs in one continuously deployed environment.
+
+See [Architecture Documentation](docs/architecture.md).
 
 ## Technology Stack
 
@@ -29,30 +77,41 @@ The project uses synthetic data and follows a Bronze, Silver and Gold medallion 
 | Data Processing | pandas, PyArrow |
 | Database | PostgreSQL 16, SQLAlchemy |
 | Orchestration | Apache Airflow |
-| Cloud | AWS S3, Lambda, API Gateway |
-| Analytics | Streamlit |
+| Cloud Storage | Amazon S3 |
+| Cloud Integration | AWS Lambda, API Gateway |
+| Data Catalog | AWS Glue |
+| Serverless Analytics | Amazon Athena |
+| Dashboard | Streamlit |
 | Infrastructure | Terraform, Docker |
 | Monitoring | Amazon CloudWatch, SNS |
 | Testing | pytest |
 | CI/CD | GitHub Actions, Git |
 
-## Data Architecture
+## Medallion Data Architecture
 
-PharmaFlow follows a medallion data architecture:
+PharmaFlow organizes its data into three processing layers.
 
-**Bronze Layer:** Raw synthetic pharmacy source data.
+### Bronze Layer
 
-**Silver Layer:** Cleaned, validated and standardized datasets.
+Stores raw synthetic pharmacy data from source systems.
 
-**Gold Layer:** Aggregated datasets for reporting and analytics.
+### Silver Layer
 
-The Gold layer includes:
+Contains cleaned, validated, and standardized data.
 
-- Branch revenue
-- Medicine revenue
-- Supplier spending
+Processing includes duplicate handling, required-field validation, quantity checks, and calculated-value verification.
 
-See [Architecture Documentation](docs/architecture.md).
+### Gold Layer
+
+Contains curated datasets for business reporting and analytics.
+
+The three principal Gold datasets are:
+
+| Dataset | Purpose |
+|---|---|
+| `branch_revenue` | Revenue and transaction analysis by branch |
+| `medicine_revenue` | Medicine sales and revenue analysis |
+| `supplier_spend` | Wholesale supplier purchasing analysis |
 
 ## Dataset
 
@@ -66,6 +125,148 @@ The synthetic dataset includes:
 | Retail sales | 10,000 |
 | Wholesale orders | 3,000 |
 
+All records are synthetic. No real patient or customer information is used.
+
+## AWS Data Lake and Analytics
+
+PharmaFlow integrates Amazon S3, AWS Glue Data Catalog, and Amazon Athena.
+
+### Amazon S3
+
+The data lake uses the following prefixes:
+
+```text
+audit/
+bronze/
+silver/
+gold/
+```
+
+The project has also produced these Gold outputs:
+
+```text
+gold/api_summary.json
+gold/branch_revenue.parquet
+gold/medicine_revenue.parquet
+gold/supplier_spend.parquet
+```
+
+For the Glue and Athena integration, curated Parquet objects are stored under dataset-specific prefixes:
+
+```text
+gold/branch_revenue/data.parquet
+gold/medicine_revenue/data.parquet
+gold/supplier_spend/data.parquet
+```
+
+### AWS Glue Data Catalog
+
+**Database:** `pharmaflow_analytics`
+
+Three external Parquet tables were successfully registered:
+
+- `branch_revenue`
+- `medicine_revenue`
+- `supplier_spend`
+
+### Amazon Athena
+
+**Workgroup:** `pharmaflow-analytics`
+
+All three Gold datasets were successfully queried using SQL.
+
+Example:
+
+```sql
+SELECT *
+FROM pharmaflow_analytics.branch_revenue
+LIMIT 5;
+```
+
+### Verified Athena Results
+
+| Dataset | Query Status | Data Scanned |
+|---|---|---:|
+| Branch revenue | SUCCEEDED | 883 bytes |
+| Medicine revenue | SUCCEEDED | 1,238 bytes |
+| Supplier spend | SUCCEEDED | 1,035 bytes |
+| **Total** | **3 successful queries** | **3,156 bytes** |
+
+These figures describe the three recorded validation queries, not the total volume of data processed by the platform.
+
+The integration was validated on **15 November 2026**.
+
+See [AWS Glue and Athena Documentation](docs/aws-glue-athena.md).
+
+## Apache Airflow Orchestration
+
+Apache Airflow orchestrates the PharmaFlow data processing workflow.
+
+**DAG ID:** `pharmaflow_medallion_pipeline`
+
+The DAG coordinates processing activities across the medallion pipeline.
+
+Previously verified results include four successful DAG runs.
+
+## PostgreSQL Integration
+
+PostgreSQL provides relational storage for operational datasets.
+
+Verified records include:
+
+- Retail sales: 10,000
+- Wholesale orders: 3,000
+
+PostgreSQL runs locally using Docker.
+
+## Streamlit Analytics Dashboard
+
+The Streamlit dashboard presents pharmacy business analytics, including:
+
+- Branch revenue
+- Medicine revenue
+- Supplier spending
+
+The dashboard can be run locally using Python or Docker.
+
+A public deployment link will be added after successful hosting verification.
+
+## Infrastructure as Code
+
+Terraform is used to manage AWS infrastructure.
+
+### AWS Glue and Athena
+
+The module is located at:
+
+`infrastructure/terraform-glue-athena/`
+
+It provisions:
+
+- One AWS Glue analytics database
+- Three external Glue tables
+- One Amazon Athena workgroup
+
+All five resources were successfully deployed and verified.
+
+### EC2 and RDS
+
+Terraform configuration for EC2 and RDS is maintained separately under:
+
+`infrastructure/terraform-ec2-rds/`
+
+This infrastructure is separate from the completed Glue and Athena validation milestone.
+
+### Monitoring
+
+The project also includes Terraform-managed monitoring components:
+
+- CloudWatch error alarms
+- Amazon SNS monitoring topic
+- CloudWatch-to-SNS permissions
+
+SNS email delivery was previously verified.
+
 ## Local Development
 
 ### Prerequisites
@@ -73,39 +274,38 @@ The synthetic dataset includes:
 - Python 3.12
 - Docker Desktop
 - Git
-- PostgreSQL through Docker
-- AWS CLI for optional cloud operations
-- Terraform for monitoring infrastructure
+- AWS CLI for cloud operations
+- Terraform for infrastructure operations
 
-### Installation
-
-Clone the repository:
+### Clone Repository
 
 ```powershell
 git clone https://github.com/Sesay-samuel/pharmaflow-data-platform.git
 cd pharmaflow-data-platform
 ```
 
-Create a Python virtual environment:
+### Create Virtual Environment
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-Install dependencies:
+### Install Dependencies
 
 ```powershell
 pip install -r requirements.txt
 ```
 
-Configure environment variables:
+### Configure Environment
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-Update `.env` with your local configuration. Never commit credentials.
+Update `.env` with your local configuration.
+
+Never commit passwords, credentials, or access tokens.
 
 ### Start PostgreSQL
 
@@ -113,7 +313,7 @@ Update `.env` with your local configuration. Never commit credentials.
 docker compose up -d
 ```
 
-### Run the ETL Pipeline
+### Run ETL Pipeline
 
 ```powershell
 python -m src.generate_data
@@ -127,7 +327,9 @@ docker compose -f compose.airflow.yaml build
 docker compose -f compose.airflow.yaml up -d
 ```
 
-Open http://localhost:8081.
+Open:
+
+`http://localhost:8081`
 
 Trigger the DAG:
 
@@ -139,63 +341,22 @@ Trigger the DAG:
 python -m pytest -q
 ```
 
-Latest verified result:
+Previously verified result:
 
 **14 tests passed — 7 November 2026.**
 
-## Cloud Data Lake
+## Testing and Validation
 
-The AWS S3 data lake contains the following prefixes:
-
-```text
-audit/
-bronze/
-silver/
-gold/
-```
-
-Verified Gold outputs:
-
-```text
-gold/api_summary.json
-gold/branch_revenue.parquet
-gold/medicine_revenue.parquet
-gold/supplier_spend.parquet
-```
-
-Cloud deployment requires AWS credentials and appropriate IAM permissions.
-
-## Analytics Dashboard
-
-The Streamlit dashboard provides analytics for:
-
-- Branch revenue
-- Medicine revenue
-- Supplier spending
-
-The dashboard can be run locally using its Python application or Docker image.
-
-## Monitoring
-
-Terraform provisions:
-
-- CloudWatch error alarms for the ingestion and reporting Lambda functions
-- An SNS monitoring topic
-- SNS topic permissions for CloudWatch notifications
-
-SNS email delivery was successfully tested.
-
-An existing AWS monthly cost budget is configured separately in AWS Billing.
-
-## Validation Results
-
-| Component | Result |
+| Component | Verified Result |
 |---|---|
 | Automated tests | 14 passed |
 | PostgreSQL retail sales | 10,000 records |
 | PostgreSQL wholesale orders | 3,000 records |
 | Airflow DAG runs | 4 successful |
 | AWS S3 Gold outputs | 4 files verified |
+| AWS Glue tables | 3 verified |
+| Athena SQL queries | 3 successful |
+| Terraform Glue/Athena resources | 5 deployed |
 | Streamlit Docker container | Healthy |
 | SNS email delivery | Verified |
 | S3 encryption | AES256 |
@@ -204,21 +365,59 @@ An existing AWS monthly cost budget is configured separately in AWS Billing.
 
 See [Testing Documentation](docs/testing.md).
 
+## CI/CD
+
+GitHub Actions provides automated validation of the project.
+
+The AWS Glue and Athena pull request passed four checks:
+
+- Python Tests (push)
+- Python Tests (pull request)
+- Docker Build (push)
+- Docker Build (pull request)
+
+The milestone was merged into `main` through pull request #8.
+
+## Security and Cost Controls
+
+The project uses:
+
+- AWS IAM Identity Center authentication
+- Scoped IAM permissions
+- S3 encryption and public-access blocking
+- SSE-S3 encryption for Athena query results
+- A 10 MiB Athena per-query scan cutoff
+- AWS Budget alerts with a $5 monthly threshold
+- Git exclusions for Terraform state and credentials
+
+AWS Budget alerts are notifications, not hard spending limits.
+
+Cloud resources may incur charges even when usage is small.
+
 ## Future Enhancements
 
 - Incremental and change-data-capture pipelines
 - Amazon Redshift analytics warehouse
 - Kafka or Amazon SQS event processing
-- Neo4j knowledge graph
+- Neo4j knowledge graph integration
 - Additional data-quality observability
-- Production-grade secrets management and deployment
+- Production-grade secrets management
+- Public dashboard deployment and hosting validation
+
+## Documentation
+
+- [Architecture](docs/architecture.md)
+- [AWS Glue and Athena Integration](docs/aws-glue-athena.md)
+- [Testing](docs/testing.md)
 
 ## Data Privacy
 
-All datasets are synthetic. No real patient, customer or pharmacy transaction data is used.
+All datasets are synthetic.
+
+No real patient, customer, or pharmacy transaction data is used.
 
 ## Author
 
-Samuel Sesay
+**Samuel Sesay**
 
 [GitHub Repository](https://github.com/Sesay-samuel/pharmaflow-data-platform)

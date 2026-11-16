@@ -68,3 +68,5 @@ aws_credentials
 
 # Python
 .venv/
+
+/data/spark/

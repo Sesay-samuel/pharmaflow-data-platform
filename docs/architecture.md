@@ -53,3 +53,45 @@ notifications to Amazon SNS.
 
 SNS delivers notifications to a confirmed email subscriber.
 ```
+
+## Agentic AI Analytics Architecture
+
+PharmaFlow includes a local AI assistant that queries curated Gold-layer datasets using approved MCP tools.
+
+```mermaid
+flowchart TD
+    A[User Question] --> B[Streamlit AI Dashboard]
+    B --> C[Python AI Agent]
+    C --> D[Ollama Qwen3 4B]
+    D -->|Tool Selection| C
+    C --> E[MCP Client]
+    E --> F[MCP Server]
+    F --> G[Read-only Analytics Tools]
+    G --> H[Gold Parquet Datasets]
+    H --> G
+    G --> F
+    F --> E
+    E --> C
+    C --> I[Analytics Answer]
+```
+
+### AI Components
+
+| Component | Responsibility |
+|---|---|
+| `dashboard/ai_app.py` | Streamlit chat interface |
+| `src/agents/llm_agent.py` | AI model and MCP client orchestration |
+| `src/agents/mcp_server.py` | Exposes approved MCP tools |
+| `src/agents/tool_registry.py` | Validates and dispatches tool requests |
+| `src/agents/analytics_tools.py` | Reads and analyzes Gold Parquet datasets |
+| Ollama | Runs the local Qwen3 model |
+
+### Deployment Boundary
+
+The existing public Streamlit dashboard and local AI dashboard are separate applications.
+
+The AI assistant requires a locally accessible Ollama service and access to the Gold-layer datasets.
+
+The MCP tools are read-only and do not provide unrestricted database or infrastructure access.
+
+See [Agentic AI Documentation](agentic-ai.md).

@@ -219,6 +219,42 @@ The dashboard can be run locally using Python or Docker.
 
 The hosted dashboard uses synthetic Gold-layer Parquet files and does not require visitors to provide AWS credentials or connect to PostgreSQL.
 
+
+## Agentic AI Analytics Assistant
+
+PharmaFlow includes a local AI-powered analytics assistant built with Qwen3 4B, Ollama, Model Context Protocol (MCP), Python and Streamlit.
+
+The assistant enables natural-language analysis of synthetic Gold-layer datasets, including:
+
+- Pharmacy branch revenue rankings
+- Medicine revenue analysis
+- Supplier spending summaries
+
+The AI model selects from approved MCP tools, which retrieve and calculate results from curated Parquet datasets.
+
+### Run the AI Assistant
+
+```powershell
+ollama pull qwen3:4b
+python -m streamlit run dashboard/ai_app.py
+```
+
+Open http://localhost:8501.
+
+### Run AI Tests
+
+```powershell
+python -m pytest src/agents/ -v
+```
+
+**Previously verified:** 20 agent tests passed on 17 November 2026.
+
+The AI dashboard currently runs locally and is separate from the publicly hosted Streamlit analytics dashboard.
+
+For architecture, security boundaries and setup instructions, see [Agentic AI Documentation](docs/agentic-ai.md).
+```
+
+
 ## Infrastructure as Code
 
 Terraform is used to manage AWS infrastructure.
@@ -382,6 +418,7 @@ Cloud resources may incur charges even when usage is small.
 - [Architecture](docs/architecture.md)
 - [AWS Glue and Athena Integration](docs/aws-glue-athena.md)
 - [Testing](docs/testing.md)
+- [Agentic AI Analytics](docs/agentic-ai.md)
 
 ## Data Privacy
 

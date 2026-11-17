@@ -7,6 +7,23 @@ import pytest
 from src.agents.audit_logger import record_tool_execution
 
 
+from src.agents import audit_logger
+
+
+@pytest.fixture(autouse=True)
+def isolate_audit_log(tmp_path, monkeypatch):
+    """Prevent tests from writing to the operational audit log."""
+
+    test_log_path = tmp_path / "ai_audit.jsonl"
+
+    monkeypatch.setattr(
+        audit_logger,
+        "AUDIT_LOG_PATH",
+        test_log_path,
+    )
+
+
+
 def test_successful_audit_event(caplog):
     with caplog.at_level(
         logging.INFO,

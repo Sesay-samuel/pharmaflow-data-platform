@@ -1,8 +1,9 @@
 
 import json
 import logging
-import time
+import os
 from datetime import datetime, timezone
+from pathlib import Path
 
 ALLOWED_AUDIT_TOOLS = frozenset({
     "get_pharmacy_summary",
@@ -10,6 +11,11 @@ ALLOWED_AUDIT_TOOLS = frozenset({
 })
 
 logger = logging.getLogger("pharmaflow.ai.audit")
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_AUDIT_LOG = PROJECT_ROOT / "logs" / "ai_audit.jsonl"
+
+AUDIT_LOG_PATH = DEFAULT_AUDIT_LOG
 
 
 def record_tool_execution(
@@ -39,6 +45,25 @@ def record_tool_execution(
         "duration_ms": round(duration_ms, 2),
     }
 
-    logger.info(json.dumps(event))
+    serialized_event = json.dumps(event)
+
+    logger.info(serialized_event)
+
+    try:
+        AUDIT_LOG_PATH.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        with AUDIT_LOG_PATH.open(
+            "a",
+            encoding="utf-8",
+        ) as audit_file:
+            audit_file.write(serialized_event + "\n")
+
+    except OSError:
+        logger.warning(
+            "Unable to persist AI audit event"
+        )
 
     return event

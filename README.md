@@ -1,32 +1,102 @@
-# PharmaFlow Data Engineering Platform
 
-**End-to-End Data Engineering | Python | PostgreSQL | Apache Airflow | AWS | Docker | Terraform | CI/CD**
+# PharmaFlow Data Engineering & Agentic AI Platform
 
-PharmaFlow is an end-to-end data engineering portfolio project that simulates pharmacy retail and wholesale operations.
-It demonstrates how operational data can be generated, ingested, validated, transformed, orchestrated, stored, and queried using modern data engineering technologies.
-The platform uses synthetic datasets and follows a **Bronze, Silver, and Gold medallion architecture**.
+**End-to-End Data Engineering | AWS | Python | Apache Airflow | PostgreSQL | Terraform | Agentic AI | Ollama | MCP | CI/CD**
 
-### Live Dashboard
+PharmaFlow is an end-to-end data engineering and Agentic AI portfolio project simulating pharmacy retail and wholesale operations.
 
-**[Launch the PharmaFlow Analytics Dashboard](https://pharmaflow-analytics-dashboard.streamlit.app/)**
+The platform demonstrates how operational data can be generated, ingested, validated, transformed, orchestrated, stored, queried, and analysed using modern data engineering and AI technologies.
 
-The publicly hosted Streamlit application provides interactive analytics for branch revenue, medicine revenue, and supplier spending using synthetic Gold-layer Parquet datasets.
-The dashboard runs on Streamlit Community Cloud and does not require AWS credentials or a local PostgreSQL connection.
+It combines a Bronze/Silver/Gold medallion architecture with AWS cloud analytics, automated testing, natural-language AI analytics, and execution monitoring.
+
+All pharmacy datasets are synthetic.
+
+## Live Analytics Dashboard
+
+**[Launch PharmaFlow Analytics Dashboard](https://pharmaflow-analytics-dashboard.streamlit.app/)**
+
+The publicly hosted Streamlit dashboard provides interactive analytics for branch revenue, medicine revenue, and supplier spending.
+
+It uses curated Gold-layer Parquet datasets and does not require visitors to provide AWS credentials or connect to PostgreSQL.
+
+## Agentic AI Analytics
+
+PharmaFlow also includes a locally running AI analytics assistant powered by:
+
+- Ollama and Qwen3 4B
+- Model Context Protocol (MCP)
+- Python analytics tools
+- Streamlit
+- Read-only Gold-layer Parquet datasets
+
+Users can ask natural-language questions such as:
+
+- Which are the top three pharmacy branches by revenue?
+- Which medicines generate the highest revenue?
+- What is the total supplier spending?
+
+The AI assistant validates tool requests and uses approved analytics functions to retrieve results.
+
+The local AI application is separate from the publicly hosted analytics dashboard.
+
+See [Agentic AI Documentation](docs/agentic-ai.md).
+
+## AI Observability and Monitoring
+
+PharmaFlow includes a separate local Streamlit monitoring dashboard for AI analytics operations.
+
+Monitoring capabilities include:
+
+- Persistent JSONL audit logging
+- Tool execution counts
+- Successful and failed execution tracking
+- Success-rate calculations
+- Average execution duration
+- Per-tool performance metrics
+- Recent audit event inspection
+
+Audit events record approved tool names, execution status, timestamps, and durations without storing user questions or analytics results.
+
+Run the local monitoring dashboard:
+
+```bash
+python -m streamlit run dashboard/ai_monitoring.py --server.port 8503
+```
+
+The dashboard is available locally at `http://localhost:8503`.
 
 ## Project Highlights
 
-- Built Python ETL pipelines using pandas and SQLAlchemy.
-- Processed 10,000 retail sales and 3,000 wholesale orders.
-- Implemented automated data validation and transformation.
+### Data Engineering
+
+- Developed Python ETL pipelines using pandas and SQLAlchemy.
+- Processed 10,000 synthetic retail sales and 3,000 wholesale orders.
+- Implemented Bronze, Silver, and Gold medallion architecture.
+- Added automated data validation and transformation.
 - Orchestrated data workflows using Apache Airflow.
-- Integrated PostgreSQL and Amazon S3 storage.
-- Created three curated Gold-layer analytics datasets.
-- Registered Parquet datasets in AWS Glue Data Catalog.
-- Successfully queried all three datasets using Amazon Athena.
-- Provisioned cloud infrastructure using Terraform.
-- Implemented automated tests and GitHub Actions CI.
-- Developed a Streamlit analytics dashboard.
-- Implemented AWS monitoring and cost-awareness controls.
+- Integrated PostgreSQL and Amazon S3.
+- Created three curated Gold-layer Parquet analytics datasets.
+- Registered analytics datasets in AWS Glue Data Catalog.
+- Queried curated datasets using Amazon Athena.
+- Provisioned cloud resources using Terraform.
+
+### Agentic AI Engineering
+
+- Integrated a local Qwen3 4B model through Ollama.
+- Implemented MCP client/server communication.
+- Developed approved read-only pharmacy analytics tools.
+- Added tool argument validation and dataset restrictions.
+- Implemented structured audit logging and execution monitoring.
+- Built a local Streamlit AI analytics interface.
+
+### Software Engineering and DevOps
+
+- Implemented automated testing using pytest.
+- Verified 77 distinct automated tests passing locally.
+- Configured GitHub Actions CI and Docker builds.
+- Implemented AWS monitoring using CloudWatch and SNS.
+- Developed a publicly accessible Streamlit analytics dashboard.
+- Added automated tests for AI reliability, security boundaries, audit persistence, and execution metrics.
 
 ## Architecture
 
@@ -85,9 +155,12 @@ See [Architecture Documentation](docs/architecture.md).
 | Data Catalog | AWS Glue |
 | Serverless Analytics | Amazon Athena |
 | Dashboard | Streamlit |
+| Agentic AI | Ollama, Qwen3 4B |
+| AI Tool Integration | Model Context Protocol (MCP), Python |
+| AI Observability | JSONL audit logging, execution metrics, Streamlit monitoring |
 | Infrastructure | Terraform, Docker |
 | Monitoring | Amazon CloudWatch, SNS |
-| Testing | pytest |
+| Testing | pytest (77 distinct tests verified locally) |
 | CI/CD | GitHub Actions, Git |
 
 ## Medallion Data Architecture
@@ -359,7 +432,7 @@ python -m pytest -q
 
 ```
 Previously verified result:
-**14 tests passed — 7 November 2026.**
+**14 tests passed - 7 November 2026.**
 
 ## Testing and Validation
 

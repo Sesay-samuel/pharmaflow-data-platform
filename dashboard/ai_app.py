@@ -1,11 +1,11 @@
 
 import asyncio
 import logging
-import traceback
 
 import streamlit as st
 
 from src.agents.llm_agent import ask_pharmaflow
+from src.agents.error_handler import handle_ai_error
 
 
 # Configure logging
@@ -73,10 +73,12 @@ question = st.chat_input(
 if question:
 
     # Store the user's message
-    st.session_state.messages.append({
-        "role": "user",
-        "content": question,
-    })
+    st.session_state.messages.append(
+        {
+            "role": "user",
+            "content": question,
+        }
+    )
 
     # Display user message
     with st.chat_message("user"):
@@ -101,25 +103,15 @@ if question:
                 )
 
             except Exception as error:
-
-                logger.error(
-                    "PharmaFlow AI request failed: %s",
-                    error,
-                )
-
-                traceback.print_exception(error)
-
-                answer = (
-                    "Unable to complete the request. "
-                    "Please check the Streamlit terminal "
-                    "for the detailed error."
-                )
+                answer = handle_ai_error(error)
 
         # Display response
         st.markdown(answer)
 
     # Save assistant response
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": answer,
-    })
+    st.session_state.messages.append(
+        {
+            "role": "assistant",
+            "content": answer,
+        }
+    )

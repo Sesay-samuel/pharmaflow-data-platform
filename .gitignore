@@ -70,3 +70,5 @@ aws_credentials
 .venv/
 
 /data/spark/
+/logs/ai_audit.jsonl
+/logs/*.jsonl

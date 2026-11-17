@@ -3,10 +3,13 @@ import asyncio
 import json
 import re
 import sys
+import time
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from ollama import AsyncClient
+
+from src.agents.audit_logger import record_tool_execution
 
 
 MODEL = "qwen3:4b"
@@ -168,6 +171,58 @@ def validate_tool_arguments(
     return arguments
 
 
+async def execute_audited_tool(
+    session,
+    tool_name: str,
+    arguments: dict,
+) -> dict:
+    """Execute an approved MCP tool and audit its outcome."""
+
+    # Validate before executing anything.
+    arguments = validate_tool_arguments(
+        tool_name,
+        arguments,
+    )
+
+    start_time = time.perf_counter()
+    status = "error"
+
+    try:
+        response = await session.call_tool(
+            tool_name,
+            arguments,
+        )
+
+        data = extract_mcp_result(response)
+
+        if (
+            response.isError
+            or data.get("status") != "success"
+        ):
+            return {
+                "status": "error",
+                "message": (
+                    "The requested analytics operation "
+                    "could not be completed. "
+                    "Please check the dataset and try again."
+                ),
+            }
+
+        status = "success"
+        return data
+
+    finally:
+        duration_ms = (
+            time.perf_counter() - start_time
+        ) * 1000
+
+        record_tool_execution(
+            tool_name=tool_name,
+            status=status,
+            duration_ms=duration_ms,
+        )
+
+
 async def ask_pharmaflow(question: str) -> str:
     """Answer pharmacy analytics questions using Ollama and MCP."""
 
@@ -259,22 +314,16 @@ async def ask_pharmaflow(question: str) -> str:
                     call.function.arguments,
                 )
 
-                result = await session.call_tool(
-                    name,
-                    arguments,
+                data = await execute_audited_tool(
+                    session=session,
+                    tool_name=name,
+                    arguments=arguments,
                 )
 
-                data = extract_mcp_result(result)
-
-                if (
-                    result.isError
-                    or data.get("status") != "success"
-                ):
-                    return (
-                        "The requested analytics operation "
-                        "could not be completed. "
-                        "Please check the dataset and "
-                        "try again."
+                if data.get("status") != "success":
+                    return data.get(
+                        "message",
+                        "The analytics operation failed.",
                     )
 
                 messages.append(
